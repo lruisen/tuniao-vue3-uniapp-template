@@ -1,7 +1,7 @@
 import type { CreateRequestOptions } from '@/utils/http/types';
 import { IRequest } from '@/utils/http/IRequest';
 import { deepMerge } from '@/utils';
-import type { RequestTransform } from './RequestTransform';
+import { RequestTransform } from './RequestTransform';
 import type { HttpRequestConfig } from 'luch-request';
 
 const transform: RequestTransform = {
