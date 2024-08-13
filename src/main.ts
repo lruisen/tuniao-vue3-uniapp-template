@@ -8,10 +8,10 @@ console.log(test);
 
 export function createApp() {
     const app = createSSRApp(App);
-
+    
     // 注入全局属性
     app.config.globalProperties.$http = http;
-
+    
     return {
         app,
     };

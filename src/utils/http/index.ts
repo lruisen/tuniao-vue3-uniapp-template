@@ -18,24 +18,24 @@ const transform: RequestTransform = {
     requestInterceptors: (config: HttpRequestConfig): HttpRequestConfig => {
         config.data = config.data || {};
         config.header = config.header || {};
-
-        const { custom = {} as HttpCustom } = config;
-        const { auth, isJoinPrefix } = custom;
-
+        
+        const {custom = {} as HttpCustom} = config;
+        const {auth, isJoinPrefix} = custom;
+        
         // 是否携带token
         if (auth) {
             const token = storage.get(ACCESS_TOKEN, '');
             config.header[env.VITE_TOKEN_KEY] = `${env.VITE_TOKEN_PREFIX} ${token}`;
         }
-
+        
         // 是否加入 uri 前缀
         if (! isUrl(config.url as string) && isJoinPrefix) {
             config.url = `${env.VITE_GLOB_API_PREFIX}${config.url}`.replace(/\/+/g, '/');
         }
-
+        
         return config;
     },
-
+    
     /**
      * 请求拦截器错误处理
      * @param error
@@ -43,53 +43,59 @@ const transform: RequestTransform = {
     requestInterceptorsCatch: (error: HttpRequestConfig): void => {
         Promise.reject('网络错误，请稍后重试');
     },
-
+    
     /**
      * 响应拦截器
      * @param response
      */
     responseInterceptors: (response: HttpResponse<ResponseData>): any => {
-        const { custom = {} as HttpCustom } = response.config;
+        const {custom = {} as HttpCustom} = response.config;
         const {
+            isShowMessage = true,
             isReturnNativeResponse,
             isTransformResponse,
             isShowErrorMessage,
-            isShowSuccessMessage
+            isShowSuccessMessage,
+            successMsgTxt,
+            errorMsgTxt,
         } = custom;
-
+        
         // 是否返回原生响应，在页面中得到的是一个 response 对象
         if (isReturnNativeResponse) {
             return response;
         }
-
+        
         // 是否对返回数据进行处理
         // 用于页面代码可能需要直接获取code，data，message这些信息时开启
         if (! isTransformResponse) {
             return response.data;
         }
-
-        const { data } = response;
+        
+        const {data} = response;
         if (! data) {
             throw new Error('请求出错，请稍候重试');
         }
-
-        const { code, message, data: result } = data;
+        
+        const {code, message, data: result} = data;
         const isSuccess = data && Reflect.has(data, 'code') && code === ResultCodeEnum.SUCCESS;
-
-        if (isSuccess && isShowSuccessMessage) {
-            // TODO 展示成功提示
+        
+        if (isShowMessage) {
+            if (isSuccess && (isShowSuccessMessage || successMsgTxt)) {
+                // TODO 展示成功提示
+            }
         }
-
+        
+        
         if (code === ResultCodeEnum.SUCCESS) {
             return result;
         }
-
+        
         let errMsg = message;
         // TODO 根据 code 处理不同的错误
-
+        
         throw new Error(errMsg);
     },
-
+    
     /**
      * 响应拦截器错误处理
      * @param error
@@ -101,32 +107,33 @@ const transform: RequestTransform = {
 
 /**
  * 创建请求实例
- * @param opt 配置
+ * @param config
+ * @param transform
  */
 function createRequest(config?: Partial<HttpRequestConfig>, transform?: RequestTransform): Request {
     const httpRequest = new Request();
-
+    
     // 初始化请求配置
     httpRequest.setConfig((options: HttpRequestConfig) => {
         options = deepMerge(options, config);
         return options;
     });
-
+    
     const {
         requestInterceptors = undefined,
         requestInterceptorsCatch = undefined,
         responseInterceptors = undefined,
         responseInterceptorsCatch = undefined,
     } = transform ?? {};
-
+    
     // 请求拦截器
     httpRequest.interceptors.request.use(
         (config: HttpRequestConfig): HttpRequestConfig | Promise<HttpRequestConfig> => {
-
+            
             if (requestInterceptors && isFunction(requestInterceptors)) {
                 config = requestInterceptors(config);
             }
-
+            
             return config;
         },
         (error: HttpRequestConfig): void => {
@@ -135,15 +142,15 @@ function createRequest(config?: Partial<HttpRequestConfig>, transform?: RequestT
             }
         }
     );
-
+    
     // 响应拦截器
     httpRequest.interceptors.response.use(
         (response: HttpResponse): any => {
-
+            
             if (responseInterceptors && isFunction(responseInterceptors)) {
                 response = responseInterceptors(response);
             }
-
+            
             return response.data;
         },
         (error: HttpError): void => {
@@ -152,7 +159,7 @@ function createRequest(config?: Partial<HttpRequestConfig>, transform?: RequestT
             }
         }
     );
-
+    
     return httpRequest;
 }
 

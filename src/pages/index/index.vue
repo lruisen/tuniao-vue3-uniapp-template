@@ -2,15 +2,26 @@
   <view class="content">
     <image class="logo" src="/static/logo.png"/>
     <view class="text-area">
-      <text class="title">{{ title }}</text>
+      <text class="title" @click="showNotice">{{ title }}</text>
     </view>
+    <TnNotice ref="notifyRef"></TnNotice>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import TnNotice from '@tuniao/tnui-vue3-uniapp/components/notify/src/notify.vue';
+import type { TnNotifyInstance } from '@tuniao/tnui-vue3-uniapp';
 
+const notifyRef = ref<TnNotifyInstance>();
+const showNotice = () => notifyRef.value?.show({
+  type: 'info',
+  msg: '成功',
+  position: 'center'
+});
 const title = ref('Hello');
+
+uni.showToast();
 </script>
 
 <style>

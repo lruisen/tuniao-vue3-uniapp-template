@@ -32,6 +32,7 @@
     "src/**/*.vue",
     "types/**/*.d.ts",
     "types/**/*.ts",
+    "@tuniao/tnui-vue3-uniapp/global.d.ts",
     "vite.config.ts"
   ],
   "exclude": [
