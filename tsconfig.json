@@ -7,6 +7,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "/#/*": [
+        "types/*"
       ]
     },
     "lib": [
@@ -16,6 +19,10 @@
     ],
     "types": [
       "@dcloudio/types"
+    ],
+    "typeRoots": [
+      "./node_modules/@types/",
+      "./types"
     ]
   },
   "include": [
@@ -23,10 +30,13 @@
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
+    "types/**/*.d.ts",
+    "types/**/*.ts",
     "vite.config.ts"
   ],
   "exclude": [
     "node_modules",
+    "unpackage",
     "dist",
     "**/*.js"
   ]

@@ -42,3 +42,10 @@ export function isPascalCase(str: string): boolean {
 export function isFunction<T = Function>(val: unknown): val is T {
     return is(val, 'Function');
 }
+
+/**
+ * 判断是否 url
+ * */
+export function isUrl(url: string) {
+    return /^(http|https):\/\//g.test(url);
+}

@@ -1,14 +1,38 @@
-import type { HttpError, HttpRequestConfig, HttpResponse } from 'luch-request';
+import type { HttpCustom, HttpError, HttpRequestConfig, HttpResponse } from 'luch-request';
 import Request from 'luch-request';
-import { RequestTransform } from './RequestTransform';
-import { isFunction } from '../is';
+import type { RequestTransform } from './RequestTransform';
+import { isFunction, isUrl } from '../is';
+import { deepMerge } from '@/utils';
+import { ContentTypeEnum, ResultCodeEnum } from '@/utils/http/HttpEnum';
+import { storage } from '@/utils/Storage';
+import { ACCESS_TOKEN } from '@/enums/common';
+import type { ResponseData } from '@/utils/http/types';
+
+const env = import.meta.env;
 
 const transform: RequestTransform = {
     /**
      * 请求拦截器
      * @param config
      */
-    requestInterceptors: (config: HttpRequestConfig): HttpRequestConfig | Promise<HttpRequestConfig> => {
+    requestInterceptors: (config: HttpRequestConfig): HttpRequestConfig => {
+        config.data = config.data || {};
+        config.header = config.header || {};
+
+        const { custom = {} as HttpCustom } = config;
+        const { auth, isJoinPrefix } = custom;
+
+        // 是否携带token
+        if (auth) {
+            const token = storage.get(ACCESS_TOKEN, '');
+            config.header[env.VITE_TOKEN_KEY] = `${env.VITE_TOKEN_PREFIX} ${token}`;
+        }
+
+        // 是否加入 uri 前缀
+        if (! isUrl(config.url as string) && isJoinPrefix) {
+            config.url = `${env.VITE_GLOB_API_PREFIX}${config.url}`.replace(/\/+/g, '/');
+        }
+
         return config;
     },
 
@@ -17,15 +41,53 @@ const transform: RequestTransform = {
      * @param error
      */
     requestInterceptorsCatch: (error: HttpRequestConfig): void => {
-        return Promise.reject('网络错误，请稍后重试');
+        Promise.reject('网络错误，请稍后重试');
     },
 
     /**
      * 响应拦截器
      * @param response
      */
-    responseInterceptors: (response: HttpResponse): any => {
-        return response;
+    responseInterceptors: (response: HttpResponse<ResponseData>): any => {
+        const { custom = {} as HttpCustom } = response.config;
+        const {
+            isReturnNativeResponse,
+            isTransformResponse,
+            isShowErrorMessage,
+            isShowSuccessMessage
+        } = custom;
+
+        // 是否返回原生响应，在页面中得到的是一个 response 对象
+        if (isReturnNativeResponse) {
+            return response;
+        }
+
+        // 是否对返回数据进行处理
+        // 用于页面代码可能需要直接获取code，data，message这些信息时开启
+        if (! isTransformResponse) {
+            return response.data;
+        }
+
+        const { data } = response;
+        if (! data) {
+            throw new Error('请求出错，请稍候重试');
+        }
+
+        const { code, message, data: result } = data;
+        const isSuccess = data && Reflect.has(data, 'code') && code === ResultCodeEnum.SUCCESS;
+
+        if (isSuccess && isShowSuccessMessage) {
+            // TODO 展示成功提示
+        }
+
+        if (code === ResultCodeEnum.SUCCESS) {
+            return result;
+        }
+
+        let errMsg = message;
+        // TODO 根据 code 处理不同的错误
+
+        throw new Error(errMsg);
     },
 
     /**
@@ -33,7 +95,7 @@ const transform: RequestTransform = {
      * @param error
      */
     responseInterceptorsCatch: (error: HttpError): void => {
-        return Promise.reject('服务异常，请稍后重试');
+        Promise.reject('服务异常，请稍后重试');
     }
 };
 
@@ -41,15 +103,21 @@ const transform: RequestTransform = {
  * 创建请求实例
  * @param opt 配置
  */
-function createRequest(config?: Partial<HttpRequestConfig> = {}, transform?: RequestTransform = {}): Request {
-    const httpRequest = new Request(config);
+function createRequest(config?: Partial<HttpRequestConfig>, transform?: RequestTransform): Request {
+    const httpRequest = new Request();
+
+    // 初始化请求配置
+    httpRequest.setConfig((options: HttpRequestConfig) => {
+        options = deepMerge(options, config);
+        return options;
+    });
 
     const {
-        requestInterceptors,
-        requestInterceptorsCatch,
-        responseInterceptors,
-        responseInterceptorsCatch,
-    } = transform;
+        requestInterceptors = undefined,
+        requestInterceptorsCatch = undefined,
+        responseInterceptors = undefined,
+        responseInterceptorsCatch = undefined,
+    } = transform ?? {};
 
     // 请求拦截器
     httpRequest.interceptors.request.use(
@@ -90,8 +158,18 @@ function createRequest(config?: Partial<HttpRequestConfig> = {}, transform?: Req
 
 export const http: Request = createRequest(
     {
-        baseURL: import.meta.env,
-        timeout: 10000,
+        baseURL: env.VITE_GLOB_API_URL,
+        timeout: 10 * 1000, // 请求超时时间，先不管能不能用，直接写上
+        header: {
+            'Content-Type': ContentTypeEnum.JSON
+        },
+        withCredentials: true,
+        custom: {
+            auth: true, // 是否携带token
+            isJoinPrefix: true, // 是否默认加入前缀
+            isReturnNativeResponse: false, // 是否返回原生响应头
+            isTransformResponse: true, // 需要对返回数据进行处理
+        }
     },
     transform
 );

@@ -1,11 +1,9 @@
-// 加载所有模块
-const modules = import.meta.glob('./modules/**/*.ts', {eager: true});
-const apis: any = {};
+const files = import.meta.glob('./modules/**/*.ts', { eager: true });
+const modules: any = {};
 
-Object.keys(modules).forEach((key: string) => {
-    const mod = modules[key].default || {};
+Object.keys(files).forEach((key: string) => {
     const moduleName = key.replace(/^\.\/modules\/(.*)\.\w+$/, '$1');
-    apis[moduleName] = mod;
-}
+    modules[moduleName] = files[key];
+});
 
-
+export default modules;
