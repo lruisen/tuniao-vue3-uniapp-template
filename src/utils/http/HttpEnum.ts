@@ -2,9 +2,11 @@
  * @description: 请求结果集
  */
 export enum ResultCodeEnum {
-    SUCCESS = 200,
     ERROR = 400,
-    UNAUTHORIZED = 401,
+    SUCCESS = 200,
+    NO_LOGIN = 401,
+    NO_PERMISSION = 403,
+    SERVICE_ERROR = 500,
 }
 
 /**
