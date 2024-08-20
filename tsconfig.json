@@ -5,25 +5,12 @@
     "baseUrl": ".",
     "allowJs": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "/#/*": [
-        "types/*"
-      ]
+      "@/*": ["./src/*"],
+      "/#/*": ["types/*"]
     },
-    "lib": [
-      "esnext",
-      "dom",
-      "DOM.Iterable"
-    ],
-    "types": [
-      "@dcloudio/types"
-    ],
-    "typeRoots": [
-      "./node_modules/@types/",
-      "./types"
-    ]
+    "lib": ["esnext", "dom", "DOM.Iterable"],
+    "types": ["@dcloudio/types"],
+    "typeRoots": ["./node_modules/@types/", "./types"]
   },
   "include": [
     "src/**/*.ts",
@@ -35,10 +22,5 @@
     "@tuniao/tnui-vue3-uniapp/global.d.ts",
     "vite.config.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "unpackage",
-    "dist",
-    "**/*.js"
-  ]
+  "exclude": ["node_modules", "unpackage", "dist", "**/*.js"]
 }

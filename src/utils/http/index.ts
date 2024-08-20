@@ -4,140 +4,140 @@ import type { RequestTransform } from './RequestTransform';
 import { isFunction, isUrl } from '../is';
 import { deepMerge } from '@/utils';
 import { ContentTypeEnum, ResultCodeEnum } from '@/utils/http/HttpEnum';
-import { storage } from '@/utils/Storage';
+import { getStorage } from '@/utils/storage';
 import { ACCESS_TOKEN } from '@/enums/common';
 import type { ResponseData } from '@/utils/http/types';
 
 const env = import.meta.env;
 
 const transform: RequestTransform = {
-    /**
-     * 请求拦截器
-     * @param config
-     */
-    requestInterceptors: (config: HttpRequestConfig): HttpRequestConfig => {
-        config.data = config.data || {};
-        config.header = config.header || {};
+  /**
+   * 请求拦截器
+   * @param config
+   */
+  requestInterceptors: (config: HttpRequestConfig): HttpRequestConfig => {
+    config.data = config.data || {};
+    config.header = config.header || {};
 
-        const { custom = {} as HttpCustom } = config;
-        const { auth, isJoinPrefix } = custom;
+    const { custom = {} as HttpCustom } = config;
+    const { auth, isJoinPrefix } = custom;
 
-        // 是否携带token
-        if (auth) {
-            const token = storage.get(ACCESS_TOKEN, '');
-            config.header[env.VITE_TOKEN_KEY] = `${env.VITE_TOKEN_PREFIX} ${token}`;
-        }
-
-        // 是否加入 uri 前缀
-        if (! isUrl(config.url as string) && isJoinPrefix) {
-            config.url = `${env.VITE_GLOB_API_PREFIX}${config.url}`.replace(/\/+/g, '/');
-        }
-
-        return config;
-    },
-
-    /**
-     * 请求拦截器错误处理
-     * @param error
-     */
-    requestInterceptorsCatch: (error: HttpRequestConfig): void => {
-        Promise.reject('网络错误，请稍后重试');
-    },
-
-    /**
-     * 响应拦截器
-     * @param response
-     */
-    responseInterceptors: (response: HttpResponse<ResponseData>): any => {
-        const { custom = {} as HttpCustom } = response.config;
-        const {
-            isShowMessage = true,
-            isReturnNativeResponse,
-            isTransformResponse,
-            isShowErrorMessage,
-            isShowSuccessMessage,
-            successMsgTxt,
-            errorMsgTxt,
-            errorMsgMode,
-        } = custom;
-
-        // 是否返回原生响应，在页面中得到的是一个 response 对象
-        if (isReturnNativeResponse) {
-            return response;
-        }
-
-        // 是否对返回数据进行处理
-        // 用于页面代码可能需要直接获取code，data，message这些信息时开启
-        if (! isTransformResponse) {
-            return response.data;
-        }
-
-        const { data } = response;
-        if (! data) {
-            throw new Error('请求出错，请稍候重试');
-        }
-
-        const { code, message, data: result } = data;
-        const isSuccess = data && Reflect.has(data, 'code') && code === ResultCodeEnum.SUCCESS;
-
-        if (isShowMessage) {
-            if (isSuccess && (isShowSuccessMessage || successMsgTxt)) {
-                // TODO 展示成功提示
-                uni.showToast({ title: successMsgTxt || message || '操作成功', icon: 'none' });
-            } else if (! isSuccess && (errorMsgTxt || isShowErrorMessage)) {
-                uni.showToast({ title: errorMsgTxt || message || '操作失败', icon: 'none' });
-            } else if (! isSuccess && errorMsgMode == 'modal') {
-                uni.showModal({
-                    title: '提示',
-                    content: message,
-                    showCancel: false,
-                    confirmText: '确定'
-                });
-            }
-        }
-
-        if (code === ResultCodeEnum.SUCCESS) {
-            return result;
-        }
-
-        let errMsg = message;
-        switch (code) {
-            case ResultCodeEnum.ERROR:
-            case ResultCodeEnum.NO_PERMISSION:
-                uni.showToast({ title: errMsg, icon: 'none' });
-                break;
-            case ResultCodeEnum.SERVICE_ERROR:
-                uni.showModal({
-                    title: '警告',
-                    content: import.meta.env.MODE === 'development' ? errMsg : '服务异常，请稍后重试！',
-                    showCancel: false,
-                    confirmText: '确定'
-                });
-                break;
-            case ResultCodeEnum.NO_LOGIN:
-                uni.showModal({
-                    title: '提示',
-                    content: '未登录或登录已过期，请重新登录',
-                    showCancel: false,
-                    confirmText: '确定',
-                    success: ({ confirm }) => {
-                        if (confirm) {
-                            uni.navigateTo({ url: '/pages/login/index' });
-                        }
-                    }
-                });
-        }
-
-        throw new Error(errMsg);
-    },
-
-    /**
-     * 响应拦截器错误处理
-     * @param error
-     */
-    responseInterceptorsCatch: (error: HttpError): void => {
-        Promise.reject('服务异常，请稍后重试');
+    // 是否携带token
+    if (auth) {
+      const token = getStorage(ACCESS_TOKEN);
+      config.header[env.VITE_TOKEN_KEY] = `${env.VITE_TOKEN_PREFIX} ${token}`;
     }
+
+    // 是否加入 uri 前缀
+    if (!isUrl(config.url as string) && isJoinPrefix) {
+      config.url = `${env.VITE_GLOB_API_PREFIX}${config.url}`.replace(/\/+/g, '/');
+    }
+
+    return config;
+  },
+
+  /**
+   * 请求拦截器错误处理
+   * @param error
+   */
+  requestInterceptorsCatch: (error: HttpRequestConfig): void => {
+    Promise.reject('网络错误，请稍后重试');
+  },
+
+  /**
+   * 响应拦截器
+   * @param response
+   */
+  responseInterceptors: (response: HttpResponse<ResponseData>): any => {
+    const { custom = {} as HttpCustom } = response.config;
+    const {
+      isShowMessage = true,
+      isReturnNativeResponse,
+      isTransformResponse,
+      isShowErrorMessage,
+      isShowSuccessMessage,
+      successMsgTxt,
+      errorMsgTxt,
+      errorMsgMode,
+    } = custom;
+
+    // 是否返回原生响应，在页面中得到的是一个 response 对象
+    if (isReturnNativeResponse) {
+      return response;
+    }
+
+    // 是否对返回数据进行处理
+    // 用于页面代码可能需要直接获取code，data，message这些信息时开启
+    if (!isTransformResponse) {
+      return response.data;
+    }
+
+    const { data } = response;
+    if (!data) {
+      throw new Error('请求出错，请稍候重试');
+    }
+
+    const { code, message, data: result } = data;
+    const isSuccess = data && Reflect.has(data, 'code') && code === ResultCodeEnum.SUCCESS;
+
+    if (isShowMessage) {
+      if (isSuccess && (isShowSuccessMessage || successMsgTxt)) {
+        // TODO 展示成功提示
+        uni.showToast({ title: successMsgTxt || message || '操作成功', icon: 'none' });
+      } else if (!isSuccess && (errorMsgTxt || isShowErrorMessage)) {
+        uni.showToast({ title: errorMsgTxt || message || '操作失败', icon: 'none' });
+      } else if (!isSuccess && errorMsgMode == 'modal') {
+        uni.showModal({
+          title: '提示',
+          content: message,
+          showCancel: false,
+          confirmText: '确定',
+        });
+      }
+    }
+
+    if (code === ResultCodeEnum.SUCCESS) {
+      return result;
+    }
+
+    let errMsg = message;
+    switch (code) {
+      case ResultCodeEnum.ERROR:
+      case ResultCodeEnum.NO_PERMISSION:
+        uni.showToast({ title: errMsg, icon: 'none' });
+        break;
+      case ResultCodeEnum.SERVICE_ERROR:
+        uni.showModal({
+          title: '警告',
+          content: import.meta.env.MODE === 'development' ? errMsg : '服务异常，请稍后重试！',
+          showCancel: false,
+          confirmText: '确定',
+        });
+        break;
+      case ResultCodeEnum.NO_LOGIN:
+        uni.showModal({
+          title: '提示',
+          content: '未登录或登录已过期，请重新登录',
+          showCancel: false,
+          confirmText: '确定',
+          success: ({ confirm }) => {
+            if (confirm) {
+              uni.navigateTo({ url: '/pages/login/index' });
+            }
+          },
+        });
+    }
+
+    throw new Error(errMsg);
+  },
+
+  /**
+   * 响应拦截器错误处理
+   * @param error
+   */
+  responseInterceptorsCatch: (error: HttpError): void => {
+    Promise.reject('服务异常，请稍后重试');
+  },
 };
 
 /**
@@ -146,74 +146,72 @@ const transform: RequestTransform = {
  * @param transform
  */
 function createRequest(config?: Partial<HttpRequestConfig>, transform?: RequestTransform): Request {
-    const httpRequest = new Request();
+  const httpRequest = new Request();
 
-    // 初始化请求配置
-    httpRequest.setConfig((options: HttpRequestConfig) => {
-        options = deepMerge(options, config);
-        return options;
-    });
+  // 初始化请求配置
+  httpRequest.setConfig((options: HttpRequestConfig) => {
+    options = deepMerge(options, config);
+    return options;
+  });
 
-    const {
-        requestInterceptors = undefined,
-        requestInterceptorsCatch = undefined,
-        responseInterceptors = undefined,
-        responseInterceptorsCatch = undefined,
-    } = transform ?? {};
+  const {
+    requestInterceptors = undefined,
+    requestInterceptorsCatch = undefined,
+    responseInterceptors = undefined,
+    responseInterceptorsCatch = undefined,
+  } = transform ?? {};
 
-    // 请求拦截器
-    httpRequest.interceptors.request.use(
-        (config: HttpRequestConfig): HttpRequestConfig | Promise<HttpRequestConfig> => {
+  // 请求拦截器
+  httpRequest.interceptors.request.use(
+    (config: HttpRequestConfig): HttpRequestConfig | Promise<HttpRequestConfig> => {
+      if (requestInterceptors && isFunction(requestInterceptors)) {
+        config = requestInterceptors(config);
+      }
 
-            if (requestInterceptors && isFunction(requestInterceptors)) {
-                config = requestInterceptors(config);
-            }
+      return config;
+    },
+    (error: HttpRequestConfig): void => {
+      if (requestInterceptorsCatch && isFunction(requestInterceptorsCatch)) {
+        requestInterceptorsCatch(error);
+      }
+    },
+  );
 
-            return config;
-        },
-        (error: HttpRequestConfig): void => {
-            if (requestInterceptorsCatch && isFunction(requestInterceptorsCatch)) {
-                requestInterceptorsCatch(error);
-            }
-        }
-    );
+  // 响应拦截器
+  httpRequest.interceptors.response.use(
+    (response: HttpResponse): any => {
+      if (responseInterceptors && isFunction(responseInterceptors)) {
+        response = responseInterceptors(response);
+      }
 
-    // 响应拦截器
-    httpRequest.interceptors.response.use(
-        (response: HttpResponse): any => {
+      return response.data;
+    },
+    (error: HttpError): void => {
+      if (responseInterceptorsCatch && isFunction(responseInterceptorsCatch)) {
+        responseInterceptorsCatch(error);
+      }
+    },
+  );
 
-            if (responseInterceptors && isFunction(responseInterceptors)) {
-                response = responseInterceptors(response);
-            }
-
-            return response.data;
-        },
-        (error: HttpError): void => {
-            if (responseInterceptorsCatch && isFunction(responseInterceptorsCatch)) {
-                responseInterceptorsCatch(error);
-            }
-        }
-    );
-
-    return httpRequest;
+  return httpRequest;
 }
 
 export const http: Request = createRequest(
-    {
-        baseURL: env.VITE_GLOB_API_URL,
-        timeout: 10 * 1000, // 请求超时时间，先不管能不能用，直接写上
-        header: {
-            'Content-Type': ContentTypeEnum.JSON
-        },
-        withCredentials: true,
-        custom: {
-            auth: true, // 是否携带token
-            isJoinPrefix: true, // 是否默认加入前缀
-            isReturnNativeResponse: false, // 是否返回原生响应头
-            isTransformResponse: true, // 需要对返回数据进行处理
-        }
+  {
+    baseURL: env.VITE_GLOB_API_URL,
+    timeout: 10 * 1000, // 请求超时时间，先不管能不能用，直接写上
+    header: {
+      'Content-Type': ContentTypeEnum.JSON,
     },
-    transform
+    withCredentials: true,
+    custom: {
+      auth: true, // 是否携带token
+      isJoinPrefix: true, // 是否默认加入前缀
+      isReturnNativeResponse: false, // 是否返回原生响应头
+      isTransformResponse: true, // 需要对返回数据进行处理
+    },
+  },
+  transform,
 );
 
 // 多个不同 api 地址，直接在这里导出多个
