@@ -8,7 +8,7 @@ export default {
    * @param key 保存数据的键
    * @param value 保存的值
    */
-  setStorage(key: string, value: any) {
+  set(key: string, value: any) {
     uni.setStorageSync(key, value);
   },
 
@@ -17,7 +17,7 @@ export default {
    * @param key 获取数据的键
    * @returns 获取到的值
    */
-  getStorage(key: string) {
+  get(key: string) {
     try {
       const value = uni.getStorageSync(key);
       if (!value) return;
@@ -32,14 +32,14 @@ export default {
    * 从本地存储中移除数据
    * @param key 移除数据的键
    */
-  removeStorage(key: string) {
+  remove(key: string) {
     uni.removeStorageSync(key);
   },
 
   /**
    * 清空本地存储
    */
-  clearStorage() {
+  clear() {
     uni.clearStorageSync();
   },
 };

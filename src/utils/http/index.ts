@@ -4,7 +4,7 @@ import type { RequestTransform } from './RequestTransform';
 import { isFunction, isUrl } from '../is';
 import { deepMerge } from '@/utils';
 import { ContentTypeEnum, ResultCodeEnum } from '@/utils/http/HttpEnum';
-import { getStorage } from '@/utils/storage';
+import storage from '@/utils/storage';
 import { ACCESS_TOKEN } from '@/enums/common';
 import type { ResponseData } from '@/utils/http/types';
 
@@ -24,7 +24,7 @@ const transform: RequestTransform = {
 
     // 是否携带token
     if (auth) {
-      const token = getStorage(ACCESS_TOKEN);
+      const token = storage.get(ACCESS_TOKEN);
       config.header[env.VITE_TOKEN_KEY] = `${env.VITE_TOKEN_PREFIX} ${token}`;
     }
 
