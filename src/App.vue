@@ -1,5 +1,4 @@
 <script setup lang="ts">
-  import { onHide, onLaunch, onShow } from '@dcloudio/uni-app';
   import { debugWarn } from '@tuniao/tnui-vue3-uniapp/utils';
 
   onLaunch(() => {
@@ -18,7 +17,7 @@
   onShow(() => {
     console.log('App Show');
   });
-  
+
   onHide(() => {
     console.log('App Hide');
   });
