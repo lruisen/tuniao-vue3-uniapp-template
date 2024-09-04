@@ -1,19 +1,21 @@
 import { defineConfig, loadEnv } from 'vite';
-import uni from '@dcloudio/vite-plugin-uni';
+import Uni from '@dcloudio/vite-plugin-uni';
 import path from 'node:path';
 import AutoImport from 'unplugin-auto-import/vite';
-import UnoCSS from 'unocss/vite';
 
 // https://vitejs.dev/config/
-export default ({ mode }) => {
+export default async ({ mode }) => {
   const { UNI_PLATFORM } = process.env;
   const env = loadEnv(mode, path.resolve(process.cwd()));
   const { VITE_PORT, VITE_DROP_CONSOLE } = env;
 
+  // 由于unocss从0.59版本开始只支持 ESM, 不再支持commonJs, 故使用动态导入解决编译时报错的问题
+  const UnoCSS = await import('unocss/vite').then((i) => i.default);
+
   return defineConfig({
     base: './',
     plugins: [
-      uni(),
+      Uni(),
       UnoCSS(),
       AutoImport({
         imports: ['vue', 'uni-app'],

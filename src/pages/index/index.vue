@@ -1,15 +1,19 @@
 <template>
   <view class="content">
     <image class="logo" src="/static/logo.png" />
-    <view class="text-area">
-      <text class="title">{{ title }}</text>
+    <view class="flex justify-start w-full bg-#FF0000">
+      <text class="text-#8f8f94 text-40rpx">{{ title }}</text>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
   import { ref } from 'vue';
+  import { testApi } from '@/api/modules/common';
+
   const title = ref('Hello');
+
+  testApi({});
 </script>
 
 <style>
